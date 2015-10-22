@@ -62,7 +62,7 @@ end
 
 describe "#touch_out(exit_station)" do
   before(:each) do
-    subject.top_up(Oystercard::MIN_BALANCE)
+    subject.top_up(Oystercard::MIN_BALANCE * 5)
     subject.touch_in(station)
     subject.touch_out(station)
   end
@@ -74,6 +74,7 @@ describe "#touch_out(exit_station)" do
   end
 
   it "should charge when touching out" do
+    subject.touch_in(station)
     expect{subject.touch_out(station)}.to change{subject.balance}.by(-Oystercard::MIN_BALANCE)
   end
 
@@ -83,6 +84,23 @@ describe "#touch_out(exit_station)" do
 
   it "should record one journey (set of an entry and exit stations)" do
     expect(subject.journeys).to eq [{:entry_station => station, :exit_station => station}]
+    end
+  end
+
+  describe 'Incomplete journeys and penalty fares' do
+    context 'Touching in twice' do
+      before(:each) do
+        subject.top_up(Oystercard::MIN_BALANCE)
+        subject.touch_in(station)
+      end
+      it 'charges a penalty fare when user touches in twice consecutively' do
+        expect{subject.touch_in(station)}.to change{subject.balance}.by(-Oystercard::PENALTY_FARE)
+      end
+    end
+    context 'Touching out without having touched in' do
+      it 'charges a penalty fare when user touches out only' do
+        expect{subject.touch_out(station)}.to change{subject.balance}.by(-Oystercard::PENALTY_FARE)
+      end
     end
   end
 end
