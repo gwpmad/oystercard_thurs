@@ -2,6 +2,14 @@ require 'oystercard'
 
 describe Oystercard do
   let (:station) {double :station, name: "Aldgate", zone: 1}
+  subject(:oystercard) {described_class.new(journey_klass)}
+  let(:journey_klass) {double(:journey_klass)}
+  double_fare = 1
+  let(:journey) {double(:journey, :entry => :station, :exit => :station, :exit= => nil, :fare => double_fare)}
+
+  before(:each) do
+    allow(journey_klass).to receive(:new).with(station).and_return(journey)
+  end
 
   it "has a balance of zero" do
     expect(subject.balance).to eq (0)
@@ -31,7 +39,7 @@ describe '#deduct' do
   it 'deducts money from card' do
     subject.top_up(Oystercard::MIN_BALANCE)
     subject.touch_in(station)
-    expect{subject.touch_out(station)}.to change{subject.balance}.by(-Oystercard::MIN_BALANCE)
+    expect{subject.touch_out(station)}.to change{subject.balance}.by(-double_fare)
   end
 end
 
@@ -83,7 +91,7 @@ describe "#touch_out(exit_station)" do
   end
 
   it "should record one journey (set of an entry and exit stations)" do
-    expect(subject.journeys).to eq [{:entry_station => station, :exit_station => station}]
+    expect(subject.journeys).to eq [journey]
     end
   end
 
